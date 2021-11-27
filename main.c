@@ -83,14 +83,32 @@ void foprogram() {
                 graf_epito(graf);
                 break;
             case SZELESSEGI:
-                // szelessegi
+                printf("Add meg a kiindulo csucs szamat:\n");
+                int kezdo_szelessegi;
+                scanf("%d", &kezdo_szelessegi);
+                printf("Add meg a fajl utvonalat, ahova a vegeredmenyt menti a program:\n");
+                char szelessegi_utvonal[200];
+                scanf("%s", szelessegi_utvonal);
+                bool szelessegi_siker = szelessegi_bejaras(graf, kezdo_szelessegi, szelessegi_utvonal);
+                if (szelessegi_siker) {
+                    printf("Szelessegi bejaras sikerult, mentve %s fajlba.\n", szelessegi_utvonal);
+                } else {
+                    printf("Nem sikerult a szelessegi bejarast menteni!\n");
+                }
                 break;
             case MELYSEGI:
                 printf("Add meg a kiindulo csucs szamat:\n");
                 int kezdo_melysegi;
                 scanf("%d", &kezdo_melysegi);
-                printf("A bejaras sorrendje: ");
-                melysegi_bejaras(graf, kezdo_melysegi);
+                printf("Add meg a fajl utvonalat, ahova a vegeredmenyt menti a program:\n");
+                char melysegi_utvonal[200];
+                scanf("%s", melysegi_utvonal);
+                bool melysegi_siker = melysegi_bejaras(graf, kezdo_melysegi, melysegi_utvonal);
+                if (melysegi_siker) {
+                    printf("Melysegi bejaras sikerult, mentve %s fajlba.\n", melysegi_utvonal);
+                } else {
+                    printf("Nem sikerult a melysegi bejarast menteni!\n");
+                }
                 break;
             case UTKERESES:
                 // utkereses

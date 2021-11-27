@@ -65,6 +65,17 @@ void felszabadit_graf(Graf *g) {
     free(g);
 }
 
+static int *init_volt(Graf *g) {
+    int *volt = malloc(g->csucsok_szama * 2 * sizeof(int));
+    CsucsListaElem *cse = g->csucsok->elso->kov;
+    for (int i = 0; i < g->csucsok_szama; i++) {
+        volt[2 * i] = cse->csucs->id;
+        volt[2 * i + 1] = 0;
+        cse = cse->kov;
+    }
+    return volt;
+}
+
 static void megjelol_elem_volt(int *volt, int hossz, int e) {
     for (int i = 0; i < hossz; i++) {
         if (volt[2 * i] == e) {
@@ -83,26 +94,104 @@ static bool elem_volt(int *volt, int hossz, int e) {
     return false;
 }
 
-static void melysegi_rekurziv(Graf *g, int k, int *volt) {
-    printf("%d ", k);
+static melysegi_rekurziv(Graf *g, int k, FILE *fp, int *volt) {
+    fprintf(fp, "%d\n", k);
     megjelol_elem_volt(volt, g->csucsok_szama, k);
     Csucs *c = keres_csucs_lista(g->csucsok, k)->csucs;
     for (SzomszedsagiListaElem *sze = c->szomszedok->elso->kov; sze != c->szomszedok->utolso; sze = sze->kov) {
         if (!elem_volt(volt, g->csucsok_szama, sze->csucs)) {
-            melysegi_rekurziv(g, sze->csucs, volt);
+            melysegi_rekurziv(g, sze->csucs, fp, volt);
         }
     }
 }
 
-void melysegi_bejaras(Graf *g, int k) {
-    int *volt = malloc(g->csucsok_szama * 2 * sizeof(int));
+bool melysegi_bejaras(Graf *g, int k, char *fajlnev) {
+    FILE *fp = fopen(fajlnev, "wt");
+    if (fp == NULL) {
+        perror("Fajl megnyitasa sikertelen");
+        return false;
+    }
+    int *volt = init_volt(g);
+    melysegi_rekurziv(g, k, fp, volt);
+    fclose(fp);
+    free(volt);
+    return true;
+}
+
+bool szelessegi_bejaras(Graf *g, int k, char *fajlnev) {
+    FILE *fp = fopen(fajlnev, "wt");
+    if (fp == NULL) {
+        perror("Fajl megnyitasa sikertelen");
+        return false;
+    }
+    int *volt = init_volt(g);
+    CsucsSor *s = NULL;
+    megjelol_elem_volt(volt, g->csucsok_szama, k);
+    Csucs *c = keres_csucs_lista(g->csucsok, k)->csucs;
+    s = push_csucs_sor(s, c);
+    while (!ures_csucs_sor(s)) {
+        c = pop_csucs_sor(s);
+        fprintf(fp, "%d\n", c->id);
+        for (SzomszedsagiListaElem *sze = c->szomszedok->elso->kov; sze != c->szomszedok->utolso; sze = sze->kov) {
+            if (!elem_volt(volt, g->csucsok_szama, sze->csucs)) {
+                megjelol_elem_volt(volt, g->csucsok_szama, sze->csucs);
+                s = push_csucs_sor(s, keres_csucs_lista(g->csucsok, sze->csucs)->csucs);
+            }
+        }
+    }
+    fclose(fp);
+    free(volt);
+    felszabadit_csucs_sor(s);
+    return true;
+}
+
+static int *init_tav(Graf *g, int a) {
+    int *tav = malloc(g->csucsok_szama * 2 * sizeof(int));
     CsucsListaElem *cse = g->csucsok->elso->kov;
     for (int i = 0; i < g->csucsok_szama; i++) {
-        volt[2 * i] = cse->csucs->id;
-        volt[2 * i + 1] = 0;
+        tav[2 * i] = cse->csucs->id;
+        if (cse->csucs->id == a) {
+            tav[2 * i + 1] = 0;
+        } else {
+            tav[2 * i + 1] = INT_MAX;
+        }
         cse = cse->kov;
     }
-    melysegi_rekurziv(g, k, volt);
-    printf("\n");
-    free(volt);
+    return tav;
+}
+
+static int *init_elozo(Graf *g) {
+    int *elozo = malloc(g->csucsok_szama * 2 * sizeof(int));
+    CsucsListaElem *cse = g->csucsok->elso->kov;
+    for (int i = 0; i < g->csucsok_szama; i++) {
+        elozo[2 * i] = cse->csucs->id;
+        elozo[2 * i + 1] = 0;
+        cse = cse->kov;
+    }
+    return elozo;
+}
+
+static void beallit_tav(int *tav, int hossz, int e, int x) {
+    for (int i = 0; i < hossz; i++) {
+        if (tav[2 * i] == e) {
+            tav[2 * i + 1] = x;
+            return;
+        }
+    }
+}
+
+static int leker_tav(int *tav, int hossz, int e) {
+    for (int i = 0; i < hossz; i++) {
+        if (tav[2 * i] == e) {
+            return tav[2 * i + 1];
+        }
+    }
+    return INT_MAX;
+}
+
+void dijkstra_shortest_path(Graf *g, int a, int b) {
+    int *volt = init_volt(g);
+    int *tav = init_tav(g, a);
+    int *elozo = init_elozo(g);
+    Csucs *c = keres_csucs_lista(g->csucsok, a)->csucs;
 }

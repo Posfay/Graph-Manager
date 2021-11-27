@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <assert.h>
 
 #include "test.h"
@@ -96,9 +97,32 @@ static void test_fajlkezeles() {
     printf("Graf betoltes mukodik\n");
 }
 
+static void test_csucs_sor() {
+    CsucsSor *s = NULL;
+    Graf *g = letrehoz_graf();
+    csucs_hozzaad(g, 1);
+    csucs_hozzaad(g, 0);
+    s = push_csucs_sor(s, g->csucsok->elso->kov->csucs);
+    assert(s->db == 1);
+    s = push_csucs_sor(s, g->csucsok->utolso->elozo->csucs);
+    assert(s->db == 2);
+    assert(!ures_csucs_sor(s));
+    Csucs *c = pop_csucs_sor(s);
+    assert(c->id == 0);
+    assert(s->db == 1);
+    c = pop_csucs_sor(s);
+    assert(c->id == 1);
+    assert(s->db == 0);
+    assert(ures_csucs_sor(s));
+    felszabadit_graf(g);
+    felszabadit_csucs_sor(s);
+    printf("Csucs sor mukodik\n");
+}
+
 void unit_test() {
     test_szomszedsagi();
     test_csucs();
     test_graf();
     test_fajlkezeles();
+    test_csucs_sor();
 }

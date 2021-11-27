@@ -11,6 +11,7 @@ void el_letrehoz(Graf *g, int c1, int c2, int s);
 Graf *letrehoz_graf();
 void felszabadit_graf(Graf *g);
 
-void melysegi_bejaras(Graf *g, int k);
+bool melysegi_bejaras(Graf *g, int k, char *fajlnev);
+bool szelessegi_bejaras(Graf *g, int k, char *fajlnev);
 
 #endif //GRAF_GRAFKEZELES_H

@@ -138,3 +138,70 @@ void felszabadit_csucs_lista(CsucsLista *l) {
     free(l->utolso);
     free(l);
 }
+
+CsucsSor *push_csucs_sor(CsucsSor *s, Csucs *csucs) {
+    CsucsSorElem *uj = malloc(sizeof(CsucsSorElem));
+    uj->csucs = csucs;
+    // nincs sor
+    if (s == NULL) {
+        CsucsSor *uj_s = malloc(sizeof(CsucsSor));
+        uj_s->elso = uj;
+        uj_s->utolso = uj;
+        uj_s->db = 1;
+        uj->kov = NULL;
+        return uj_s;
+    }
+    // ures
+    if (s->elso == NULL) {
+        s->elso = uj;
+        s->utolso = uj;
+        s->db = 1;
+        uj->kov = NULL;
+        return s;
+    }
+    // nem ures
+    uj->kov = NULL;
+    s->utolso->kov = uj;
+    s->utolso = uj;
+    s->db += 1;
+    return s;
+}
+
+Csucs *pop_csucs_sor(CsucsSor *s) {
+    // nincs sor / ures
+    if (s == NULL || s->elso == NULL) {
+        return NULL;
+    }
+    Csucs *r = s->elso->csucs;
+    // egy elem van
+    if (s->elso == s->utolso) {
+        free(s->elso);
+        s->utolso = NULL;
+        s->elso = NULL;
+        s->db = 0;
+        return r;
+    }
+    // tobb elem van
+    CsucsSorElem *t = s->elso;
+    s->elso = s->elso->kov;
+    free(t);
+    s->db -= 1;
+    return r;
+}
+
+void felszabadit_csucs_sor(CsucsSor *s) {
+    if (s == NULL) {
+        return;
+    }
+    CsucsSorElem *e = s->elso;
+    while (e != NULL) {
+        CsucsSorElem *t = e;
+        e = e->kov;
+        free(t);
+    }
+    free(s);
+}
+
+bool ures_csucs_sor(CsucsSor *s) {
+    return s == NULL || s->db == 0;
+}
