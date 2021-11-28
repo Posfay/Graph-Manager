@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include "grafkezeles.h"
-#include "listak.h"
 
 #include "debugmalloc.h"
 
@@ -49,7 +48,7 @@ void el_letrehoz(Graf *g, int c1, int c2, int s) {
     g->elek_szama += 1;
 }
 
-Graf *letrehoz_graf() {
+Graf *letrehoz_ures_graf() {
     Graf *g = malloc(sizeof(Graf));
     g->csucsok_szama = 0;
     g->elek_szama = 0;
@@ -94,10 +93,11 @@ static bool elem_volt(int *volt, int hossz, int e) {
     return false;
 }
 
-static melysegi_rekurziv(Graf *g, int k, FILE *fp, int *volt) {
+static void melysegi_rekurziv(Graf *g, int k, FILE *fp, int *volt) {
     fprintf(fp, "%d\n", k);
     megjelol_elem_volt(volt, g->csucsok_szama, k);
     Csucs *c = keres_csucs_lista(g->csucsok, k)->csucs;
+
     for (SzomszedsagiListaElem *sze = c->szomszedok->elso->kov; sze != c->szomszedok->utolso; sze = sze->kov) {
         if (!elem_volt(volt, g->csucsok_szama, sze->csucs)) {
             melysegi_rekurziv(g, sze->csucs, fp, volt);
@@ -111,8 +111,11 @@ bool melysegi_bejaras(Graf *g, int k, char *fajlnev) {
         perror("Fajl megnyitasa sikertelen");
         return false;
     }
+
     int *volt = init_volt(g);
+
     melysegi_rekurziv(g, k, fp, volt);
+
     fclose(fp);
     free(volt);
     return true;
@@ -124,14 +127,17 @@ bool szelessegi_bejaras(Graf *g, int k, char *fajlnev) {
         perror("Fajl megnyitasa sikertelen");
         return false;
     }
+
     int *volt = init_volt(g);
     CsucsSor *s = NULL;
     megjelol_elem_volt(volt, g->csucsok_szama, k);
     Csucs *c = keres_csucs_lista(g->csucsok, k)->csucs;
     s = push_csucs_sor(s, c);
+
     while (!ures_csucs_sor(s)) {
         c = pop_csucs_sor(s);
         fprintf(fp, "%d\n", c->id);
+
         for (SzomszedsagiListaElem *sze = c->szomszedok->elso->kov; sze != c->szomszedok->utolso; sze = sze->kov) {
             if (!elem_volt(volt, g->csucsok_szama, sze->csucs)) {
                 megjelol_elem_volt(volt, g->csucsok_szama, sze->csucs);
@@ -139,6 +145,7 @@ bool szelessegi_bejaras(Graf *g, int k, char *fajlnev) {
             }
         }
     }
+
     fclose(fp);
     free(volt);
     felszabadit_csucs_sor(s);
@@ -165,33 +172,95 @@ static int *init_elozo(Graf *g) {
     CsucsListaElem *cse = g->csucsok->elso->kov;
     for (int i = 0; i < g->csucsok_szama; i++) {
         elozo[2 * i] = cse->csucs->id;
-        elozo[2 * i + 1] = 0;
+        elozo[2 * i + 1] = -1;
         cse = cse->kov;
     }
     return elozo;
 }
 
-static void beallit_tav(int *tav, int hossz, int e, int x) {
+static int leker_tav_i(int *tav, int hossz, int e) {
     for (int i = 0; i < hossz; i++) {
         if (tav[2 * i] == e) {
-            tav[2 * i + 1] = x;
-            return;
+            return 2 * i;
         }
     }
 }
 
-static int leker_tav(int *tav, int hossz, int e) {
+static int leker_min_tav_i(int *tav, int *volt, int hossz) {
+    int min = INT_MAX;
+    int min_i;
     for (int i = 0; i < hossz; i++) {
-        if (tav[2 * i] == e) {
-            return tav[2 * i + 1];
+        // min tavval rendelkezo csucs, ami meg nem volt
+        if ((volt[2 * i + 1] == 0) && (tav[2 * i + 1] <= min)) {
+            min = tav[2 * i + 1];
+            min_i = 2 * i;
         }
     }
-    return INT_MAX;
+    return min_i;
 }
 
-void dijkstra_shortest_path(Graf *g, int a, int b) {
+static void legrovidebb_ut_fajlba(int *tav, int *elozo, int hossz, int cel, FILE *fp) {
+    int c = leker_tav_i(tav, hossz, cel);
+    if (elozo[c + 1] != -1) {
+        fprintf(fp, "%d\n", tav[c + 1]);
+        while (elozo[c + 1] != -1) {
+            fprintf(fp, "%d\n", elozo[c]);
+            c = elozo[c + 1];
+        }
+        fprintf(fp, "%d\n", elozo[c]);
+    } else {
+        fprintf(fp, "Nincs utvonal\n");
+    }
+}
+
+bool dijkstra_legrovidebb_ut(Graf *g, int a, int b, char *fajlnev) {
+    FILE *fp = fopen(fajlnev, "wt");
+    if (fp == NULL) {
+        perror("Fajl megnyitasa sikertelen");
+        return false;
+    }
+
     int *volt = init_volt(g);
     int *tav = init_tav(g, a);
     int *elozo = init_elozo(g);
-    Csucs *c = keres_csucs_lista(g->csucsok, a)->csucs;
+    int volt_db = 0;
+
+    while (volt_db < g->csucsok_szama) {
+        int min_i = leker_min_tav_i(tav, volt, g->csucsok_szama);
+
+        // elertuk a celpontot, befejezhetjuk a legrovidebb utkeresest
+        if (volt[min_i] == b) {
+            break;
+        }
+
+        Csucs *c = keres_csucs_lista(g->csucsok, volt[min_i])->csucs;
+        int tav_c = tav[min_i + 1];
+        // megjelol elem volt
+        volt[min_i + 1] = 1;
+        volt_db++;
+
+        // nem osszefuggo a kiinduloponttal, nincs ertelme a legrovidebb utnak ide, atugorjuk
+        if (tav_c == INT_MAX) {
+            continue;
+        }
+
+        for (SzomszedsagiListaElem *sze = c->szomszedok->elso->kov; sze != c->szomszedok->utolso; sze = sze->kov) {
+            if (!elem_volt(volt, g->csucsok_szama, sze->csucs)) {
+                int uj_tav = tav_c + sze->suly;
+                int sze_tav_i = leker_tav_i(tav, g->csucsok_szama, sze->csucs);
+                if (uj_tav < tav[sze_tav_i + 1]) {
+                    tav[sze_tav_i + 1] = uj_tav;
+                    elozo[sze_tav_i + 1] = min_i;
+                }
+            }
+        }
+    }
+
+    legrovidebb_ut_fajlba(tav, elozo, g->csucsok_szama, b, fp);
+
+    fclose(fp);
+    free(volt);
+    free(tav);
+    free(elozo);
+    return true;
 }

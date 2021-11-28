@@ -27,12 +27,6 @@ typedef struct CsucsLista {
     struct CsucsListaElem *elso, *utolso;
 } CsucsLista;
 
-typedef struct Graf {
-    CsucsLista *csucsok;
-    int csucsok_szama;
-    int elek_szama;
-} Graf;
-
 typedef struct CsucsSorElem {
     Csucs *csucs;
     struct CsucsSorElem *kov;

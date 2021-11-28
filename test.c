@@ -43,7 +43,7 @@ static void test_csucs() {
 }
 
 static void test_graf() {
-    Graf *g = letrehoz_graf();
+    Graf *g = letrehoz_ures_graf();
     csucs_hozzaad(g, 1);
     csucs_hozzaad(g, 0);
     assert(g->csucsok_szama == 2);
@@ -78,7 +78,7 @@ static void test_graf() {
 }
 
 static void test_fajlkezeles() {
-    Graf *g = letrehoz_graf();
+    Graf *g = letrehoz_ures_graf();
     betolt_graf(g, "g.txt");
     assert(g->csucsok_szama == 3);
     assert(g->elek_szama == 2);
@@ -99,7 +99,7 @@ static void test_fajlkezeles() {
 
 static void test_csucs_sor() {
     CsucsSor *s = NULL;
-    Graf *g = letrehoz_graf();
+    Graf *g = letrehoz_ures_graf();
     csucs_hozzaad(g, 1);
     csucs_hozzaad(g, 0);
     s = push_csucs_sor(s, g->csucsok->elso->kov->csucs);

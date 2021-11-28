@@ -2,19 +2,20 @@
 #include <stdlib.h>
 
 #include "fajlkezeles.h"
-#include "listak.h"
-#include "grafkezeles.h"
 
 #include "debugmalloc.h"
 
-void betolt_graf(Graf *g, char* fajlnev) {
+Graf *betolt_graf(Graf *g, char* fajlnev) {
+    // kitakaritja az elozoleg betoltott grafot a memoriabol
     felszabadit_graf(g);
-    g = letrehoz_graf();
+    g = letrehoz_ures_graf();
+
     FILE *fp = fopen(fajlnev, "rt");
     if (fp == NULL) {
         perror("Fajl megnyitasa sikertelen");
-        return;
+        return NULL;
     }
+
     int csucsok, elek;
     fscanf(fp, "%d %d", &csucsok, &elek);
     for (int i = 0; i < elek; i++) {
@@ -22,6 +23,7 @@ void betolt_graf(Graf *g, char* fajlnev) {
         fscanf(fp, "%d %d %d", &c1, &c2, &s);
         CsucsListaElem *ce1 = keres_csucs_lista(g->csucsok, c1);
         CsucsListaElem *ce2 = keres_csucs_lista(g->csucsok, c2);
+
         if (ce1 == NULL) {
             csucs_hozzaad(g, c1);
         }
@@ -30,15 +32,18 @@ void betolt_graf(Graf *g, char* fajlnev) {
         }
         el_letrehoz(g, c1, c2, s);
     }
+
     fclose(fp);
+    return g;
 }
 
-void ment_graf(Graf *g, char* fajlnev) {
+bool ment_graf(Graf *g, char* fajlnev) {
     FILE *fp = fopen(fajlnev, "wt");
     if (fp == NULL) {
         perror("Fajl megnyitasa sikertelen");
-        return;
+        return false;
     }
+
     fprintf(fp, "%d %d\n", g->csucsok_szama, g->elek_szama);
     for (CsucsListaElem *cse = g->csucsok->elso->kov; cse != g->csucsok->utolso; cse = cse->kov) {
         Csucs *c = cse->csucs;
@@ -48,5 +53,7 @@ void ment_graf(Graf *g, char* fajlnev) {
             }
         }
     }
+
     fclose(fp);
+    return true;
 }
